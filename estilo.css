@@ -1,0 +1,43 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+body{
+    background-color: rgba(90, 57, 134, 0.877);
+    color:white;
+}
+h1{
+    margin-top: 10px;
+    color: rgb(0,255,100);
+}
+main{
+    margin: 30px 0px 0 10px;
+    display: flex;    
+}
+
+h2{
+    margin: 20px 10px 10px 20px;
+}
+.jogo{
+    display: flex;
+    flex-direction: column;
+}
+.pontuacao-atual{
+    display: flex;
+}
+p#score{
+    font-size: 22px;
+    margin: 23px 0;
+}
+
+.historicos{
+    margin: 0 0 0 23px;
+}
+
+.historico{
+    margin:5px 0 5px 0;
+}
+
