@@ -200,6 +200,11 @@ window.onload = function(){
         moveObstacle();
         ctx.drawImage(sprites.obstacle, tp * obstaclex, tp * obstacley, tp, tp);
 
+        //obstáculo
+        moveObstacle();
+        ctx.fillStyle = 'rgb(255, 153, 0)';
+        ctx.fillRect(tp * obstaclex, tp * obstacley, tp, tp);
+
         //plotando o rastro da cobra
         
         for(var i =0; i<rastro.length;i++){
