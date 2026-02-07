@@ -21,7 +21,9 @@ window.onload = function(){
     var obstaclex = 5;
     var obstacley = 5;
     var obstacleTick = 0;
-    var obstacleSpeed = 6;
+    var obstacleSpeed = 2;
+    var obstacleBias = 0.7;
+    var sprites = createSprites(tp);
 
     function resetGame(){
         rabo = 3;
@@ -115,17 +117,10 @@ window.onload = function(){
         //plotando o rastro da cobra
         
         for(var i =0; i<rastro.length;i++){
-            if (i==rastro.length-1){ //pinta o olhinho da cobra
-                ctx.fillStyle = 'rgb(255, 255, 255)';
-                ctx.fillRect(rastro[i].x*tp, rastro[i].y*tp, tp-10, tp-10);
-            }
             if (i==rastro.length-2){ //pinta a cabeça da cobra
-                ctx.fillStyle = 'rgb(0, 255, 100)';
-                ctx.fillRect(rastro[i].x*tp, rastro[i].y*tp, tp, tp);
-            }
-            if(i!=rastro.length-1 && i!= rastro.length-2){ // pinta o corpo da cobra ou seja, o resto de rastro
-                ctx.fillStyle = 'green';
-                ctx.fillRect(rastro[i].x*tp, rastro[i].y*tp, tp, tp);
+                ctx.drawImage(sprites.head, rastro[i].x*tp, rastro[i].y*tp, tp, tp);
+            } else { // pinta o corpo da cobra ou seja, o resto de rastro
+                ctx.drawImage(sprites.body, rastro[i].x*tp, rastro[i].y*tp, tp, tp);
             }
 
             //verificando se a cobra se comeu
@@ -189,7 +184,31 @@ window.onload = function(){
                 vely = 0;         
             break;
 
+    function teclou(event){
+        switch (event.keyCode){
+            case 37: //left
+                event.preventDefault();
+                if (velx >0){break;}
+                velx = -vel; 
+                vely = 0;         
+            break;
+            
+            case 38: //up
+                event.preventDefault();
+                if (vely >0){break;}
+                velx = 0; 
+                vely = -vel;         
+            break;
+
+            case 39://right
+                event.preventDefault();
+                if(velx <0){break;} 
+                velx = +vel; 
+                vely = 0;         
+            break;
+
             case 40://down
+                event.preventDefault();
                 if(vely<0){break;}
                 velx = 0; 
                 vely = +vel;         
