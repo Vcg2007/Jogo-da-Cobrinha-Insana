@@ -58,6 +58,52 @@ h2, h3{
     margin-bottom: 8px;
 }
 
+.nivel-config{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.nivel-hint{
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.nivel-label{
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+#nivel-select{
+    background: rgba(15, 14, 30, 0.9);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 14px;
+}
+
+.nivel-info h4{
+    margin-bottom: 6px;
+}
+
+.nivel-info ul{
+    list-style: none;
+    display: grid;
+    gap: 6px;
+    padding-left: 0;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.nivel-info li::before{
+    content: "•";
+    color: rgb(0, 255, 100);
+    margin-right: 6px;
+}
+
 .badge{
     background: rgba(0, 255, 100, 0.2);
     color: rgb(0, 255, 100);

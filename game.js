@@ -40,6 +40,89 @@ window.onload = function(){
         body: 'rgb(220, 120, 0)',
         tail: 'rgb(200, 100, 0)'
     });
+    var foodScale = 1;
+    var levelSelect = document.getElementById('nivel-select');
+    var levelDetails = document.getElementById('nivel-detalhes');
+    var levels = [
+        {
+            id: 1,
+            name: 'Treino',
+            foodScale: 3,
+            rivalSpeed: 0.5,
+            bias: 0.4,
+            details: [
+                'Comida 3x maior.',
+                'Cobra rival em 50% da velocidade.',
+                'Movimento rival mais aleatório.'
+            ]
+        },
+        {
+            id: 2,
+            name: 'Rápido',
+            foodScale: 3,
+            rivalSpeed: 0.6,
+            bias: 0.55,
+            details: [
+                'Comida 3x maior.',
+                'Cobra rival em 60% da velocidade.',
+                'Menos aleatoriedade no movimento.'
+            ]
+        },
+        {
+            id: 3,
+            name: 'Moderado',
+            foodScale: 2,
+            rivalSpeed: 0.6,
+            bias: 0.55,
+            details: [
+                'Comida 2x maior.',
+                'Cobra rival em 60% da velocidade.',
+                'Menos aleatoriedade no movimento.'
+            ]
+        },
+        {
+            id: 4,
+            name: 'Intenso',
+            foodScale: 2,
+            rivalSpeed: 0.75,
+            bias: 0.7,
+            details: [
+                'Comida 2x maior.',
+                'Cobra rival em 75% da velocidade.',
+                'Movimento rival com padrão atual.'
+            ]
+        },
+        {
+            id: 5,
+            name: 'Insano',
+            foodScale: 1.25,
+            rivalSpeed: 0.75,
+            bias: 0.7,
+            details: [
+                'Comida 1,25x maior.',
+                'Cobra rival em 75% da velocidade.',
+                'Movimento rival com padrão atual.'
+            ]
+        }
+    ];
+
+    function applyLevel(levelId){
+        var selected = levels.find(function(level){
+            return level.id === levelId;
+        }) || levels[0];
+        foodScale = selected.foodScale;
+        obstacleSpeedFactor = selected.rivalSpeed;
+        obstacleBias = selected.bias;
+        if(levelDetails){
+            levelDetails.innerHTML = '';
+            selected.details.forEach(function(texto){
+                var item = document.createElement('li');
+                item.textContent = texto;
+                levelDetails.appendChild(item);
+            });
+        }
+        resetGame();
+    }
 
     function resetGame(){
         rabo = 3;
@@ -221,6 +304,18 @@ window.onload = function(){
             }
         }
 
+        if((velx !== 0 || vely !== 0) && !isRunning){
+            isRunning = true;
+        }
+
+        if(isRunning){
+            remainingTime -= delta;
+            if(remainingTime <= 0){
+                registerGameOver('Perdeu! O tempo acabou.');
+                return;
+            }
+        }
+
         if(pontox <0){
             pontox = qtdpeca-1;
         }
@@ -240,7 +335,15 @@ window.onload = function(){
             alvoy = Math.floor(Math.random()*qtdpeca);
         }
 
-        ctx.drawImage(sprites.food, tp * alvox, tp*alvoy, tp, tp);
+        var foodSize = tp * foodScale;
+        var foodOffset = (foodSize - tp) / 2;
+        ctx.drawImage(
+            sprites.food,
+            tp * alvox - foodOffset,
+            tp * alvoy - foodOffset,
+            foodSize,
+            foodSize
+        );
 
         //obstáculo
         moveObstacle();
@@ -288,14 +391,6 @@ window.onload = function(){
             remainingTime = 10 + Math.floor(comidasColetadas / 7);
         }
 
-        var obstaculoColisao = obstacleTrail.some(function(segmento){
-            return segmento.x == pontox && segmento.y == pontoy;
-        });
-        if(obstaculoColisao && (velx != 0 || vely != 0)){
-            registerGameOver('Perdeu! Você bateu no obstáculo.');
-            return;
-        }
-
          //Atualiza informações da pontuação
 
         pontos.innerHTML = (`${pontuacao}   <i class="far fa-star"></i>`);
@@ -312,6 +407,16 @@ window.onload = function(){
             hist.innerHTML = (valor !== undefined ? `${valor}` : 'Sem Pontuação');
         }
 
+    }
+
+    if(levelSelect){
+        levelSelect.addEventListener('change', function(event){
+            var nivel = Number(event.target.value);
+            applyLevel(nivel);
+        });
+        applyLevel(Number(levelSelect.value));
+    } else {
+        applyLevel(1);
     }
 
     function teclou(event){
