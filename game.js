@@ -11,7 +11,9 @@ window.onload = function(){
     var velx = vely = 0;
     var pontox = pontoy = 1;
     var tp = 20; //tamanho da peça
-    var qtdpeca = 20; //qtd de peca = tamanho canva / tamanho peca
+    var baseGrid = 20; //tamanho base do grid
+    var qtdpeca = baseGrid; //qtd de peca = tamanho canva / tamanho peca
+    var expansionLevel = 0;
     var alvox = alvoy = 10;
     var rastro = [];
     var rabo = 3;
@@ -25,12 +27,9 @@ window.onload = function(){
     var lastTickTime = Date.now();
     var isRunning = false;
     var comidasColetadas = 0;
-    var obstaclex = 5;
-    var obstacley = 5;
     var obstacleBias = 0.7;
     var obstacleSpeedFactor = 0.75;
-    var obstacleMoveAccumulator = 0;
-    var obstacleTrail = [];
+    var rivals = [];
     var sprites = createSprites(tp);
     var playerSprites = createSnakeSprites(tp, {
         head: 'rgb(0, 255, 100)',
@@ -42,6 +41,14 @@ window.onload = function(){
         body: 'rgb(220, 120, 0)',
         tail: 'rgb(200, 100, 0)'
     });
+    var rivalPalettes = [
+        { head: 'rgb(255, 153, 0)', body: 'rgb(220, 120, 0)', tail: 'rgb(200, 100, 0)' },
+        { head: 'rgb(0, 180, 255)', body: 'rgb(0, 130, 210)', tail: 'rgb(0, 110, 180)' },
+        { head: 'rgb(255, 90, 200)', body: 'rgb(210, 70, 170)', tail: 'rgb(180, 60, 140)' },
+        { head: 'rgb(255, 200, 0)', body: 'rgb(210, 160, 0)', tail: 'rgb(180, 130, 0)' },
+        { head: 'rgb(140, 255, 120)', body: 'rgb(90, 210, 90)', tail: 'rgb(70, 180, 70)' },
+        { head: 'rgb(200, 160, 255)', body: 'rgb(160, 120, 210)', tail: 'rgb(130, 100, 180)' }
+    ];
     var foodScale = 1;
     var levelSelect = document.getElementById('nivel-select');
     var levelDetails = document.getElementById('nivel-detalhes');
@@ -115,6 +122,10 @@ window.onload = function(){
         foodScale = selected.foodScale;
         obstacleSpeedFactor = selected.rivalSpeed * 0.8;
         obstacleBias = selected.bias;
+        rivals.forEach(function(rival){
+            rival.speedFactor = obstacleSpeedFactor;
+            rival.bias = obstacleBias;
+        });
         if(levelDetails){
             levelDetails.innerHTML = '';
             selected.details.forEach(function(texto){
@@ -133,16 +144,13 @@ window.onload = function(){
         pontox = 1;
         pontoy = 1;
         rastro = [];
+        expansionLevel = 0;
+        qtdpeca = baseGrid;
+        palco.width = qtdpeca * tp;
+        palco.height = qtdpeca * tp;
         alvox = Math.floor(Math.random()*qtdpeca);
         alvoy = Math.floor(Math.random()*qtdpeca);
-        obstaclex = Math.floor(Math.random()*qtdpeca);
-        obstacley = Math.floor(Math.random()*qtdpeca);
-        obstacleMoveAccumulator = 0;
-        obstacleTrail = [
-            {x: obstaclex, y: obstacley},
-            {x: obstaclex, y: obstacley},
-            {x: obstaclex, y: obstacley}
-        ];
+        rivals = [createRival(0)];
         remainingTime = initialTime;
         isRunning = false;
         comidasColetadas = 0;
@@ -210,25 +218,49 @@ window.onload = function(){
     }
 
     function registerGameOver(message){
-        historico.push(pontuacao);
+        window.alert(message);
+        var nome = window.prompt('Digite seu nome para registrar a pontuação:', 'Jogador');
+        if(!nome){
+            nome = 'Anônimo';
+        }
+        historico.push({nome: nome, score: pontuacao});
         if(historico.length >5){
             historico.shift();
         }
-        window.alert(message);
         resetGame();
     }
 
-    function moveObstacle(){
-        obstacleMoveAccumulator += obstacleSpeedFactor;
-        if(obstacleMoveAccumulator < 1){
+    function createRival(index){
+        var palette = rivalPalettes[index % rivalPalettes.length];
+        var sprites = createSnakeSprites(tp, palette);
+        var startX = Math.floor(Math.random()*qtdpeca);
+        var startY = Math.floor(Math.random()*qtdpeca);
+        return {
+            x: startX,
+            y: startY,
+            trail: [
+                {x: startX, y: startY},
+                {x: startX, y: startY},
+                {x: startX, y: startY}
+            ],
+            accumulator: 0,
+            speedFactor: obstacleSpeedFactor,
+            bias: obstacleBias,
+            sprites: sprites
+        };
+    }
+
+    function moveRival(rival){
+        rival.accumulator += rival.speedFactor;
+        if(rival.accumulator < 1){
             return;
         }
-        obstacleMoveAccumulator -= 1;
+        rival.accumulator -= 1;
         var dx = 0;
         var dy = 0;
-        var deltaX = alvox - obstaclex;
-        var deltaY = alvoy - obstacley;
-        if(Math.random() < obstacleBias){
+        var deltaX = alvox - rival.x;
+        var deltaY = alvoy - rival.y;
+        if(Math.random() < rival.bias){
             if(Math.abs(deltaX) > Math.abs(deltaY)){
                 dx = deltaX > 0 ? 1 : -1;
             } else if(deltaY !== 0){
@@ -248,25 +280,40 @@ window.onload = function(){
             dy = escolha.y;
         }
 
-        obstaclex += dx;
-        obstacley += dy;
+        rival.x += dx;
+        rival.y += dy;
 
-        if(obstaclex <0){
-            obstaclex = qtdpeca-1;
+        if(rival.x <0){
+            rival.x = qtdpeca-1;
         }
-        if (obstaclex >=qtdpeca){
-            obstaclex=0;
+        if (rival.x >=qtdpeca){
+            rival.x=0;
         }
 
-        if(obstacley <0){
-            obstacley = qtdpeca-1;
+        if(rival.y <0){
+            rival.y = qtdpeca-1;
         }
-        if (obstacley >=qtdpeca){
-            obstacley=0;
+        if (rival.y >=qtdpeca){
+            rival.y=0;
         }
-        obstacleTrail.push({x: obstaclex, y: obstacley});
-        while(obstacleTrail.length > 3){
-            obstacleTrail.shift();
+        rival.trail.push({x: rival.x, y: rival.y});
+        while(rival.trail.length > 3){
+            rival.trail.shift();
+        }
+    }
+
+    function updateProgression(){
+        var targetLevel = Math.min(Math.floor(pontuacao / 50), 5);
+        if(targetLevel !== expansionLevel){
+            expansionLevel = targetLevel;
+            qtdpeca = baseGrid + expansionLevel * 2;
+            palco.width = qtdpeca * tp;
+            palco.height = qtdpeca * tp;
+        }
+
+        var targetRivals = 1 + expansionLevel;
+        while(rivals.length < targetRivals){
+            rivals.push(createRival(rivals.length));
         }
     }
 
@@ -337,6 +384,18 @@ window.onload = function(){
             }
         }
 
+        if((velx !== 0 || vely !== 0) && !isRunning){
+            isRunning = true;
+        }
+
+        if(isRunning){
+            remainingTime -= delta;
+            if(remainingTime <= 0){
+                registerGameOver('Perdeu! O tempo acabou.');
+                return;
+            }
+        }
+
         if(pontox <0){
             pontox = qtdpeca-1;
         }
@@ -351,7 +410,10 @@ window.onload = function(){
             pontoy=0;
         }
         //gerando alvo
-        if(alvox === obstaclex && alvoy === obstacley){
+        var rivalOnFood = rivals.some(function(rival){
+            return rival.x === alvox && rival.y === alvoy;
+        });
+        if(rivalOnFood){
             alvox = Math.floor(Math.random()*qtdpeca);
             alvoy = Math.floor(Math.random()*qtdpeca);
         }
@@ -368,17 +430,19 @@ window.onload = function(){
             foodSize
         );
 
-        //obstáculo
-        moveObstacle();
-        for(var j = 0; j < obstacleTrail.length; j++){
-            if(j === obstacleTrail.length - 1){
-                ctx.drawImage(rivalSprites.head, obstacleTrail[j].x*tp, obstacleTrail[j].y*tp, tp, tp);
-            } else if(j === 0){
-                ctx.drawImage(rivalSprites.tail, obstacleTrail[j].x*tp, obstacleTrail[j].y*tp, tp, tp);
-            } else {
-                ctx.drawImage(rivalSprites.body, obstacleTrail[j].x*tp, obstacleTrail[j].y*tp, tp, tp);
+        //cobras rivais
+        rivals.forEach(function(rival){
+            moveRival(rival);
+            for(var j = 0; j < rival.trail.length; j++){
+                if(j === rival.trail.length - 1){
+                    ctx.drawImage(rival.sprites.head, rival.trail[j].x*tp, rival.trail[j].y*tp, tp, tp);
+                } else if(j === 0){
+                    ctx.drawImage(rival.sprites.tail, rival.trail[j].x*tp, rival.trail[j].y*tp, tp, tp);
+                } else {
+                    ctx.drawImage(rival.sprites.body, rival.trail[j].x*tp, rival.trail[j].y*tp, tp, tp);
+                }
             }
-        }
+        });
 
         //plotando o rastro da cobra
         
@@ -414,6 +478,7 @@ window.onload = function(){
             alvoy = Math.floor(Math.random()*qtdpeca);
             comidasColetadas++;
             remainingTime = initialTime + Math.floor(comidasColetadas / 7);
+            updateProgression();
         }
 
          //Atualiza informações da pontuação
@@ -429,7 +494,11 @@ window.onload = function(){
         for(var i= 0; i < historicosElementos.length; i++){
             var hist = historicosElementos[i];
             var valor = historico[historico.length - 1 - i];
-            hist.innerHTML = (valor !== undefined ? `${valor}` : 'Sem Pontuação');
+            if(valor){
+                hist.innerHTML = `${valor.nome}: ${valor.score}`;
+            } else {
+                hist.innerHTML = 'Sem Pontuação';
+            }
         }
 
     }
