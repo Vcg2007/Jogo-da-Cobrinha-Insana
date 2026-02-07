@@ -13,22 +13,55 @@
         <h1>Insane Snake by Victor  <i class="fas fa-dragon"></i></h1>
     </header>
     <main>
-        <canvas id = 'palco' width="400" height="400"></canvas>
-        <div class="jogo">    
-            <div class="pontuacao-atual">
-                <h2> Pontuação: </h2>
-                <p id = 'score'></p>
-            </div>
-            
-            <div class="historicos">
+        <canvas id="palco" width="400" height="400"></canvas>
+        <div class="jogo">
+            <section class="card pontuacao-atual">
+                <div class="card-header">
+                    <h2>Pontuação</h2>
+                    <span class="badge">Ao vivo</span>
+                </div>
+                <p id="score">0</p>
+                <div class="score-meta">
+                    <p>Recorde: <strong id="best-score">0</strong></p>
+                    <p>Tempo restante: <strong id="timer">15.0s</strong></p>
+                    <p class="score-hint">Colete estrelas e evite o obstáculo.</p>
+                </div>
+            </section>
+
+            <section class="card nivel-config">
+                <h3>Seleção de Nível</h3>
+                <p class="nivel-hint">Escolha a dificuldade antes de começar a jogar.</p>
+                <label class="nivel-label" for="nivel-select">Nível do jogo</label>
+                <select id="nivel-select">
+                    <option value="1">Nível 1 - Treino</option>
+                    <option value="2">Nível 2 - Rápido</option>
+                    <option value="3">Nível 3 - Moderado</option>
+                    <option value="4">Nível 4 - Intenso</option>
+                    <option value="5">Nível 5 - Insano</option>
+                </select>
+                <div class="nivel-info" id="nivel-info">
+                    <h4>Detalhes do nível</h4>
+                    <ul id="nivel-detalhes"></ul>
+                </div>
+            </section>
+
+            <section class="card historicos">
                 <h3>Últimas Pontuações</h3>
                 <p class="historico">Sem Pontuação</p>
                 <p class="historico">Sem Pontuação</p>
                 <p class="historico">Sem Pontuação</p>
                 <p class="historico">Sem Pontuação</p>
                 <p class="historico">Sem Pontuação</p>
-            </div>
-           
+            </section>
+
+            <section class="card info-jogo">
+                <h3>Informações</h3>
+                <ul>
+                    <li>Setas do teclado controlam a cobrinha.</li>
+                    <li>Cobras rivais surgem conforme sua pontuação.</li>
+                    <li>Elas se movem com estilos diferentes em cada nível.</li>
+                </ul>
+            </section>
         </div>
     </main>
     
