@@ -39,53 +39,6 @@ window.onload = function(){
         obstacleTick = 0;
     }
 
-    function createSprite(size, drawFn){
-        var canvas = document.createElement('canvas');
-        canvas.width = size;
-        canvas.height = size;
-        var context = canvas.getContext('2d');
-        drawFn(context, size);
-        return canvas;
-    }
-
-    function createSprites(size){
-        return {
-            food: createSprite(size, function(ctx, s){
-                ctx.fillStyle = 'rgba(255, 70, 70, 0.95)';
-                ctx.beginPath();
-                ctx.arc(s/2, s/2, s/2 - 2, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.fillStyle = 'rgba(255, 220, 220, 0.7)';
-                ctx.beginPath();
-                ctx.arc(s/2 + 3, s/2 - 3, 3, 0, Math.PI * 2);
-                ctx.fill();
-            }),
-            head: createSprite(size, function(ctx, s){
-                ctx.fillStyle = 'rgb(0, 255, 100)';
-                ctx.fillRect(0, 0, s, s);
-                ctx.fillStyle = 'rgba(0, 150, 60, 0.8)';
-                ctx.fillRect(2, 2, s - 4, s - 4);
-                ctx.fillStyle = '#fff';
-                ctx.beginPath();
-                ctx.arc(s - 6, 6, 3, 0, Math.PI * 2);
-                ctx.fill();
-            }),
-            body: createSprite(size, function(ctx, s){
-                ctx.fillStyle = 'rgb(0, 200, 80)';
-                ctx.fillRect(0, 0, s, s);
-                ctx.fillStyle = 'rgba(0, 120, 50, 0.7)';
-                ctx.fillRect(3, 3, s - 6, s - 6);
-            }),
-            obstacle: createSprite(size, function(ctx, s){
-                ctx.fillStyle = 'rgb(255, 153, 0)';
-                ctx.fillRect(0, 0, s, s);
-                ctx.strokeStyle = 'rgba(120, 60, 0, 0.8)';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(2, 2, s - 4, s - 4);
-            })
-        };
-    }
-
     function registerGameOver(message){
         historico.push(pontuacao);
         if(historico.length >5){
@@ -100,32 +53,15 @@ window.onload = function(){
         if(obstacleTick % obstacleSpeed !== 0){
             return;
         }
-        var dx = 0;
-        var dy = 0;
-        var deltaX = alvox - obstaclex;
-        var deltaY = alvoy - obstacley;
-        if(Math.random() < obstacleBias){
-            if(Math.abs(deltaX) > Math.abs(deltaY)){
-                dx = deltaX > 0 ? 1 : -1;
-            } else if(deltaY !== 0){
-                dy = deltaY > 0 ? 1 : -1;
-            }
-        }
-
-        if(dx === 0 && dy === 0){
-            var direcoes = [
-                {x: 1, y: 0},
-                {x: -1, y: 0},
-                {x: 0, y: 1},
-                {x: 0, y: -1}
-            ];
-            var escolha = direcoes[Math.floor(Math.random()*direcoes.length)];
-            dx = escolha.x;
-            dy = escolha.y;
-        }
-
-        obstaclex += dx;
-        obstacley += dy;
+        var direcoes = [
+            {x: 1, y: 0},
+            {x: -1, y: 0},
+            {x: 0, y: 1},
+            {x: 0, y: -1}
+        ];
+        var escolha = direcoes[Math.floor(Math.random()*direcoes.length)];
+        obstaclex += escolha.x;
+        obstacley += escolha.y;
 
         if(obstaclex <0){
             obstaclex = qtdpeca-1;
@@ -170,11 +106,13 @@ window.onload = function(){
             alvoy = Math.floor(Math.random()*qtdpeca);
         }
 
-        ctx.drawImage(sprites.food, tp * alvox, tp*alvoy, tp, tp);
+        ctx.fillStyle = 'red';
+        ctx.fillRect(tp * alvox, tp*alvoy, tp, tp);
 
         //obstáculo
         moveObstacle();
-        ctx.drawImage(sprites.obstacle, tp * obstaclex, tp * obstacley, tp, tp);
+        ctx.fillStyle = 'rgb(255, 153, 0)';
+        ctx.fillRect(tp * obstaclex, tp * obstacley, tp, tp);
 
         //plotando o rastro da cobra
         
@@ -225,6 +163,26 @@ window.onload = function(){
         }
 
     }
+
+    function teclou(event){
+        switch (event.keyCode){
+            case 37: //left
+                if (velx >0){break;}
+                velx = -vel; 
+                vely = 0;         
+            break;
+            
+            case 38: //up
+                if (vely >0){break;}
+                velx = 0; 
+                vely = -vel;         
+            break;
+
+            case 39://right
+                if(velx <0){break;} 
+                velx = +vel; 
+                vely = 0;         
+            break;
 
     function teclou(event){
         switch (event.keyCode){
