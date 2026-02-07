@@ -13,22 +13,37 @@
         <h1>Insane Snake by Victor  <i class="fas fa-dragon"></i></h1>
     </header>
     <main>
-        <canvas id = 'palco' width="400" height="400"></canvas>
-        <div class="jogo">    
-            <div class="pontuacao-atual">
-                <h2> Pontuação: </h2>
-                <p id = 'score'></p>
-            </div>
-            
-            <div class="historicos">
+        <canvas id="palco" width="400" height="400"></canvas>
+        <div class="jogo">
+            <section class="card pontuacao-atual">
+                <div class="card-header">
+                    <h2>Pontuação</h2>
+                    <span class="badge">Ao vivo</span>
+                </div>
+                <p id="score">0</p>
+                <div class="score-meta">
+                    <p>Recorde: <strong id="best-score">0</strong></p>
+                    <p class="score-hint">Colete estrelas e evite o obstáculo.</p>
+                </div>
+            </section>
+
+            <section class="card historicos">
                 <h3>Últimas Pontuações</h3>
                 <p class="historico">Sem Pontuação</p>
                 <p class="historico">Sem Pontuação</p>
                 <p class="historico">Sem Pontuação</p>
                 <p class="historico">Sem Pontuação</p>
                 <p class="historico">Sem Pontuação</p>
-            </div>
-           
+            </section>
+
+            <section class="card info-jogo">
+                <h3>Informações</h3>
+                <ul>
+                    <li>Setas do teclado controlam a cobrinha.</li>
+                    <li>O obstáculo se move aleatoriamente.</li>
+                    <li>Encostou nele? Fim de jogo.</li>
+                </ul>
+            </section>
         </div>
     </main>
     
