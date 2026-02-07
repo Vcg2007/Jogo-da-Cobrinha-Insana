@@ -15,8 +15,66 @@ window.onload = function(){
     var rastro = [];
     var rabo = 3;
     var pontuacao = 0;
-    var pontos = document.getElementById('score')
+    var pontos = document.getElementById('score');
+    var bestScore = document.getElementById('best-score');
     var historico = [0,0,0,0,0];
+    var obstaclex = 5;
+    var obstacley = 5;
+    var obstacleTick = 0;
+    var obstacleSpeed = 6;
+
+    function resetGame(){
+        rabo = 3;
+        pontuacao = 0;
+        velx = vely = 0;
+        pontox = 1;
+        pontoy = 1;
+        rastro = [];
+        alvox = Math.floor(Math.random()*qtdpeca);
+        alvoy = Math.floor(Math.random()*qtdpeca);
+        obstaclex = Math.floor(Math.random()*qtdpeca);
+        obstacley = Math.floor(Math.random()*qtdpeca);
+        obstacleTick = 0;
+    }
+
+    function registerGameOver(message){
+        historico.push(pontuacao);
+        if(historico.length >5){
+            historico.shift();
+        }
+        window.alert(message);
+        resetGame();
+    }
+
+    function moveObstacle(){
+        obstacleTick++;
+        if(obstacleTick % obstacleSpeed !== 0){
+            return;
+        }
+        var direcoes = [
+            {x: 1, y: 0},
+            {x: -1, y: 0},
+            {x: 0, y: 1},
+            {x: 0, y: -1}
+        ];
+        var escolha = direcoes[Math.floor(Math.random()*direcoes.length)];
+        obstaclex += escolha.x;
+        obstacley += escolha.y;
+
+        if(obstaclex <0){
+            obstaclex = qtdpeca-1;
+        }
+        if (obstaclex >=qtdpeca){
+            obstaclex=0;
+        }
+
+        if(obstacley <0){
+            obstacley = qtdpeca-1;
+        }
+        if (obstacley >=qtdpeca){
+            obstacley=0;
+        }
+    }
 
     function game(){
             
@@ -41,9 +99,18 @@ window.onload = function(){
             pontoy=0;
         }
         //gerando alvo
+        if(alvox === obstaclex && alvoy === obstacley){
+            alvox = Math.floor(Math.random()*qtdpeca);
+            alvoy = Math.floor(Math.random()*qtdpeca);
+        }
 
         ctx.fillStyle = 'red';
         ctx.fillRect(tp * alvox, tp*alvoy, tp, tp);
+
+        //obstáculo
+        moveObstacle();
+        ctx.fillStyle = 'rgb(255, 153, 0)';
+        ctx.fillRect(tp * obstaclex, tp * obstacley, tp, tp);
 
         //plotando o rastro da cobra
         
@@ -63,17 +130,8 @@ window.onload = function(){
 
             //verificando se a cobra se comeu
             if(rastro[i].x == pontox && rastro[i].y == pontoy  && (velx != 0 || vely != 0)){
-                
-                //trata da pontuação
-                rabo =3;
-                historico.push(pontuacao);
-                window.alert('perdeu')
-                pontuacao=0;          
-                if(historico.length >5){
-                    historico.shift();
-                }                     
-                
-                velx = vely = 0;
+                registerGameOver('Perdeu! A cobra se mordeu.');
+                return;
             }
         }
         rastro.push({x:pontox, y:pontoy}); //inserindo a nova posição da cobra no rastro
@@ -91,12 +149,22 @@ window.onload = function(){
             alvoy = Math.floor(Math.random()*qtdpeca);
         }
 
+        if(pontox == obstaclex && pontoy == obstacley && (velx != 0 || vely != 0)){
+            registerGameOver('Perdeu! Você bateu no obstáculo.');
+            return;
+        }
+
          //Atualiza informações da pontuação
 
-        pontos.innerHTML = (`${pontuacao}   <i class="far fa-star"></i>`)
-        for(var i= 0; i<=6; i++){
-            var hist = document.getElementsByClassName('historico')[i]
-            hist.innerHTML = (`${historico[4-i]}`)
+        pontos.innerHTML = (`${pontuacao}   <i class="far fa-star"></i>`);
+        if(pontuacao > Number(bestScore.innerText)){
+            bestScore.innerText = pontuacao;
+        }
+        var historicosElementos = document.getElementsByClassName('historico');
+        for(var i= 0; i < historicosElementos.length; i++){
+            var hist = historicosElementos[i];
+            var valor = historico[historico.length - 1 - i];
+            hist.innerHTML = (valor !== undefined ? `${valor}` : 'Sem Pontuação');
         }
 
     }
