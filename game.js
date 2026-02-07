@@ -348,6 +348,54 @@ window.onload = function(){
             }
         }
 
+        if((velx !== 0 || vely !== 0) && !isRunning){
+            isRunning = true;
+        }
+
+        if(isRunning){
+            remainingTime -= delta;
+            if(remainingTime <= 0){
+                registerGameOver('Perdeu! O tempo acabou.');
+                return;
+            }
+        }
+
+        if((velx !== 0 || vely !== 0) && !isRunning){
+            isRunning = true;
+        }
+
+        if(isRunning){
+            remainingTime -= delta;
+            if(remainingTime <= 0){
+                registerGameOver('Perdeu! O tempo acabou.');
+                return;
+            }
+        }
+
+        if((velx !== 0 || vely !== 0) && !isRunning){
+            isRunning = true;
+        }
+
+        if(isRunning){
+            remainingTime -= delta;
+            if(remainingTime <= 0){
+                registerGameOver('Perdeu! O tempo acabou.');
+                return;
+            }
+        }
+
+        if((velx !== 0 || vely !== 0) && !isRunning){
+            isRunning = true;
+        }
+
+        if(isRunning){
+            remainingTime -= delta;
+            if(remainingTime <= 0){
+                registerGameOver('Perdeu! O tempo acabou.');
+                return;
+            }
+        }
+
         if(pontox <0){
             pontox = qtdpeca-1;
         }
