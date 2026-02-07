@@ -4,7 +4,8 @@ window.onload = function(){
 
     document.addEventListener('keydown', teclou);
 
-    setInterval(game, 50);
+    var tickInterval = 62.5;
+    setInterval(game, tickInterval);
 
     const vel = 1;
     var velx = vely = 0;
@@ -19,7 +20,8 @@ window.onload = function(){
     var bestScore = document.getElementById('best-score');
     var historico = [0,0,0,0,0];
     var timerElement = document.getElementById('timer');
-    var remainingTime = 10;
+    var initialTime = 15;
+    var remainingTime = initialTime;
     var lastTickTime = Date.now();
     var isRunning = false;
     var comidasColetadas = 0;
@@ -52,7 +54,7 @@ window.onload = function(){
             bias: 0.4,
             details: [
                 'Comida 3x maior.',
-                'Cobra rival em 50% da velocidade.',
+                'Cobra rival em 40% da velocidade.',
                 'Movimento rival mais aleatório.'
             ]
         },
@@ -64,7 +66,7 @@ window.onload = function(){
             bias: 0.55,
             details: [
                 'Comida 3x maior.',
-                'Cobra rival em 60% da velocidade.',
+                'Cobra rival em 48% da velocidade.',
                 'Menos aleatoriedade no movimento.'
             ]
         },
@@ -76,7 +78,7 @@ window.onload = function(){
             bias: 0.55,
             details: [
                 'Comida 2x maior.',
-                'Cobra rival em 60% da velocidade.',
+                'Cobra rival em 48% da velocidade.',
                 'Menos aleatoriedade no movimento.'
             ]
         },
@@ -88,7 +90,7 @@ window.onload = function(){
             bias: 0.7,
             details: [
                 'Comida 2x maior.',
-                'Cobra rival em 75% da velocidade.',
+                'Cobra rival em 60% da velocidade.',
                 'Movimento rival com padrão atual.'
             ]
         },
@@ -100,7 +102,7 @@ window.onload = function(){
             bias: 0.7,
             details: [
                 'Comida 1,25x maior.',
-                'Cobra rival em 75% da velocidade.',
+                'Cobra rival em 60% da velocidade.',
                 'Movimento rival com padrão atual.'
             ]
         }
@@ -111,7 +113,7 @@ window.onload = function(){
             return level.id === levelId;
         }) || levels[0];
         foodScale = selected.foodScale;
-        obstacleSpeedFactor = selected.rivalSpeed;
+        obstacleSpeedFactor = selected.rivalSpeed * 0.8;
         obstacleBias = selected.bias;
         if(levelDetails){
             levelDetails.innerHTML = '';
@@ -141,7 +143,7 @@ window.onload = function(){
             {x: obstaclex, y: obstacley},
             {x: obstaclex, y: obstacley}
         ];
-        remainingTime = 10;
+        remainingTime = initialTime;
         isRunning = false;
         comidasColetadas = 0;
         lastTickTime = Date.now();
@@ -268,6 +270,13 @@ window.onload = function(){
         }
     }
 
+    function isColliding(ax, ay, aw, ah, bx, by, bw, bh){
+        return ax < bx + bw &&
+            ax + aw > bx &&
+            ay < by + bh &&
+            ay + ah > by;
+    }
+
     function game(){
         var agora = Date.now();
         var delta = (agora - lastTickTime) / 1000;
@@ -279,6 +288,18 @@ window.onload = function(){
 
         pontox += velx;
         pontoy += vely;
+
+        if((velx !== 0 || vely !== 0) && !isRunning){
+            isRunning = true;
+        }
+
+        if(isRunning){
+            remainingTime -= delta;
+            if(remainingTime <= 0){
+                registerGameOver('Perdeu! O tempo acabou.');
+                return;
+            }
+        }
 
         if((velx !== 0 || vely !== 0) && !isRunning){
             isRunning = true;
@@ -337,10 +358,12 @@ window.onload = function(){
 
         var foodSize = tp * foodScale;
         var foodOffset = (foodSize - tp) / 2;
+        var foodX = tp * alvox - foodOffset;
+        var foodY = tp * alvoy - foodOffset;
         ctx.drawImage(
             sprites.food,
-            tp * alvox - foodOffset,
-            tp * alvoy - foodOffset,
+            foodX,
+            foodY,
             foodSize,
             foodSize
         );
@@ -382,13 +405,15 @@ window.onload = function(){
         }
         //caso a cobra encontre o alvo, aumenta o tamanho do rabo
         //posiciona o alvo em um lugar novo
-        if(alvox == pontox && alvoy == pontoy){
+        var headX = pontox * tp;
+        var headY = pontoy * tp;
+        if(isColliding(headX, headY, tp, tp, foodX, foodY, foodSize, foodSize)){
             pontuacao++
             rabo++;
             alvox = Math.floor(Math.random()*qtdpeca);
             alvoy = Math.floor(Math.random()*qtdpeca);
             comidasColetadas++;
-            remainingTime = 10 + Math.floor(comidasColetadas / 7);
+            remainingTime = initialTime + Math.floor(comidasColetadas / 7);
         }
 
          //Atualiza informações da pontuação
