@@ -25,10 +25,21 @@ window.onload = function(){
     var comidasColetadas = 0;
     var obstaclex = 5;
     var obstacley = 5;
-    var obstacleTick = 0;
-    var obstacleSpeed = 2;
     var obstacleBias = 0.7;
+    var obstacleSpeedFactor = 0.75;
+    var obstacleMoveAccumulator = 0;
+    var obstacleTrail = [];
     var sprites = createSprites(tp);
+    var playerSprites = createSnakeSprites(tp, {
+        head: 'rgb(0, 255, 100)',
+        body: 'rgb(0, 200, 80)',
+        tail: 'rgb(0, 180, 70)'
+    });
+    var rivalSprites = createSnakeSprites(tp, {
+        head: 'rgb(255, 153, 0)',
+        body: 'rgb(220, 120, 0)',
+        tail: 'rgb(200, 100, 0)'
+    });
 
     function resetGame(){
         rabo = 3;
@@ -41,7 +52,12 @@ window.onload = function(){
         alvoy = Math.floor(Math.random()*qtdpeca);
         obstaclex = Math.floor(Math.random()*qtdpeca);
         obstacley = Math.floor(Math.random()*qtdpeca);
-        obstacleTick = 0;
+        obstacleMoveAccumulator = 0;
+        obstacleTrail = [
+            {x: obstaclex, y: obstacley},
+            {x: obstaclex, y: obstacley},
+            {x: obstaclex, y: obstacley}
+        ];
         remainingTime = 10;
         isRunning = false;
         comidasColetadas = 0;
@@ -68,29 +84,42 @@ window.onload = function(){
                 ctx.beginPath();
                 ctx.arc(s/2 + 3, s/2 - 3, 3, 0, Math.PI * 2);
                 ctx.fill();
-            }),
+            })
+        };
+    }
+
+    function createSnakeSprites(size, palette){
+        return {
             head: createSprite(size, function(ctx, s){
-                ctx.fillStyle = 'rgb(0, 255, 100)';
+                ctx.fillStyle = palette.head;
                 ctx.fillRect(0, 0, s, s);
-                ctx.fillStyle = 'rgba(0, 150, 60, 0.8)';
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.18)';
                 ctx.fillRect(2, 2, s - 4, s - 4);
                 ctx.fillStyle = '#fff';
                 ctx.beginPath();
                 ctx.arc(s - 6, 6, 3, 0, Math.PI * 2);
                 ctx.fill();
+                ctx.fillStyle = '#111';
+                ctx.beginPath();
+                ctx.arc(s - 6, 6, 1.5, 0, Math.PI * 2);
+                ctx.fill();
             }),
             body: createSprite(size, function(ctx, s){
-                ctx.fillStyle = 'rgb(0, 200, 80)';
+                ctx.fillStyle = palette.body;
                 ctx.fillRect(0, 0, s, s);
-                ctx.fillStyle = 'rgba(0, 120, 50, 0.7)';
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.18)';
                 ctx.fillRect(3, 3, s - 6, s - 6);
             }),
-            obstacle: createSprite(size, function(ctx, s){
-                ctx.fillStyle = 'rgb(255, 153, 0)';
+            tail: createSprite(size, function(ctx, s){
+                ctx.fillStyle = palette.tail;
                 ctx.fillRect(0, 0, s, s);
-                ctx.strokeStyle = 'rgba(120, 60, 0, 0.8)';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(2, 2, s - 4, s - 4);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.beginPath();
+                ctx.moveTo(4, s - 4);
+                ctx.lineTo(s / 2, 4);
+                ctx.lineTo(s - 4, s - 4);
+                ctx.closePath();
+                ctx.fill();
             })
         };
     }
@@ -105,10 +134,11 @@ window.onload = function(){
     }
 
     function moveObstacle(){
-        obstacleTick++;
-        if(obstacleTick % obstacleSpeed !== 0){
+        obstacleMoveAccumulator += obstacleSpeedFactor;
+        if(obstacleMoveAccumulator < 1){
             return;
         }
+        obstacleMoveAccumulator -= 1;
         var dx = 0;
         var dy = 0;
         var deltaX = alvox - obstaclex;
@@ -149,6 +179,10 @@ window.onload = function(){
         if (obstacley >=qtdpeca){
             obstacley=0;
         }
+        obstacleTrail.push({x: obstaclex, y: obstacley});
+        while(obstacleTrail.length > 3){
+            obstacleTrail.shift();
+        }
     }
 
     function game(){
@@ -162,6 +196,18 @@ window.onload = function(){
 
         pontox += velx;
         pontoy += vely;
+
+        if((velx !== 0 || vely !== 0) && !isRunning){
+            isRunning = true;
+        }
+
+        if(isRunning){
+            remainingTime -= delta;
+            if(remainingTime <= 0){
+                registerGameOver('Perdeu! O tempo acabou.');
+                return;
+            }
+        }
 
         if((velx !== 0 || vely !== 0) && !isRunning){
             isRunning = true;
@@ -198,20 +244,25 @@ window.onload = function(){
 
         //obstáculo
         moveObstacle();
-        ctx.drawImage(sprites.obstacle, tp * obstaclex, tp * obstacley, tp, tp);
-
-        //obstáculo
-        moveObstacle();
-        ctx.fillStyle = 'rgb(255, 153, 0)';
-        ctx.fillRect(tp * obstaclex, tp * obstacley, tp, tp);
+        for(var j = 0; j < obstacleTrail.length; j++){
+            if(j === obstacleTrail.length - 1){
+                ctx.drawImage(rivalSprites.head, obstacleTrail[j].x*tp, obstacleTrail[j].y*tp, tp, tp);
+            } else if(j === 0){
+                ctx.drawImage(rivalSprites.tail, obstacleTrail[j].x*tp, obstacleTrail[j].y*tp, tp, tp);
+            } else {
+                ctx.drawImage(rivalSprites.body, obstacleTrail[j].x*tp, obstacleTrail[j].y*tp, tp, tp);
+            }
+        }
 
         //plotando o rastro da cobra
         
         for(var i =0; i<rastro.length;i++){
-            if (i==rastro.length-2){ //pinta a cabeça da cobra
-                ctx.drawImage(sprites.head, rastro[i].x*tp, rastro[i].y*tp, tp, tp);
+            if (i==rastro.length-1){ //pinta a cabeça da cobra
+                ctx.drawImage(playerSprites.head, rastro[i].x*tp, rastro[i].y*tp, tp, tp);
+            } else if (i==0){
+                ctx.drawImage(playerSprites.tail, rastro[i].x*tp, rastro[i].y*tp, tp, tp);
             } else { // pinta o corpo da cobra ou seja, o resto de rastro
-                ctx.drawImage(sprites.body, rastro[i].x*tp, rastro[i].y*tp, tp, tp);
+                ctx.drawImage(playerSprites.body, rastro[i].x*tp, rastro[i].y*tp, tp, tp);
             }
 
             //verificando se a cobra se comeu
@@ -237,7 +288,10 @@ window.onload = function(){
             remainingTime = 10 + Math.floor(comidasColetadas / 7);
         }
 
-        if(pontox == obstaclex && pontoy == obstacley && (velx != 0 || vely != 0)){
+        var obstaculoColisao = obstacleTrail.some(function(segmento){
+            return segmento.x == pontox && segmento.y == pontoy;
+        });
+        if(obstaculoColisao && (velx != 0 || vely != 0)){
             registerGameOver('Perdeu! Você bateu no obstáculo.');
             return;
         }
