@@ -53,6 +53,7 @@ window.onload = function(){
     var foodScale = 1;
     var levelSelect = document.getElementById('nivel-select');
     var levelDetails = document.getElementById('nivel-detalhes');
+    var leaderboardList = document.getElementById('leaderboard-list');
     var levels = [
         {
             id: 1,
@@ -117,11 +118,15 @@ window.onload = function(){
     ];
     var audioContext = null;
     var audioUnlocked = false;
+    var currentLevelId = 1;
+    var sessionBest = 0;
+    var leaderboard = loadLeaderboard();
 
     function applyLevel(levelId){
         var selected = levels.find(function(level){
             return level.id === levelId;
         }) || levels[0];
+        currentLevelId = selected.id;
         foodScale = selected.foodScale;
         obstacleSpeedFactor = selected.rivalSpeed * 0.8;
         obstacleBias = selected.bias;
@@ -138,6 +143,87 @@ window.onload = function(){
             });
         }
         resetGame();
+        renderLeaderboard();
+    }
+
+    function loadLeaderboard(){
+        var stored = window.localStorage.getItem('snakeLeaderboard');
+        if(stored){
+            try{
+                return JSON.parse(stored);
+            } catch (e){
+                return createEmptyLeaderboard();
+            }
+        }
+        return createEmptyLeaderboard();
+    }
+
+    function createEmptyLeaderboard(){
+        return {
+            levels: {
+                1: [],
+                2: [],
+                3: [],
+                4: [],
+                5: []
+            }
+        };
+    }
+
+    function saveLeaderboard(){
+        window.localStorage.setItem('snakeLeaderboard', JSON.stringify(leaderboard));
+    }
+
+    function recordScore(name, score, levelId){
+        if(score > sessionBest){
+            sessionBest = score;
+            if(bestScore){
+                bestScore.innerText = sessionBest;
+            }
+        }
+        var entry = {
+            nome: name,
+            score: score,
+            level: levelId,
+            timestamp: Date.now()
+        };
+        var bucket = leaderboard.levels[levelId] || [];
+        bucket.push(entry);
+        bucket.sort(function(a, b){
+            return b.score - a.score;
+        });
+        leaderboard.levels[levelId] = bucket.slice(0, 10);
+        saveLeaderboard();
+        renderLeaderboard();
+    }
+
+    function renderLeaderboard(){
+        if(!leaderboardList){
+            return;
+        }
+        leaderboardList.innerHTML = '';
+        var bucket = leaderboard.levels[currentLevelId] || [];
+        if(bucket.length === 0){
+            var emptyItem = document.createElement('li');
+            emptyItem.className = 'leaderboard-item';
+            emptyItem.textContent = 'Nenhuma pontuação registrada ainda.';
+            leaderboardList.appendChild(emptyItem);
+            return;
+        }
+        bucket.forEach(function(entry, index){
+            var item = document.createElement('li');
+            item.className = 'leaderboard-item';
+            var rank = document.createElement('span');
+            rank.textContent = `#${index + 1}`;
+            var name = document.createElement('span');
+            name.textContent = entry.nome;
+            var score = document.createElement('span');
+            score.innerHTML = `${entry.score} <i class="fas fa-apple-alt"></i>`;
+            item.appendChild(rank);
+            item.appendChild(name);
+            item.appendChild(score);
+            leaderboardList.appendChild(item);
+        });
     }
 
     function getAudioContext(){
@@ -218,8 +304,11 @@ window.onload = function(){
         comidasColetadas = 0;
         lastTickTime = Date.now();
         if(feedbackElement){
-            feedbackElement.textContent = 'Pronto para a próxima estrela.';
+            feedbackElement.textContent = 'Pronto para a próxima comida.';
             feedbackElement.classList.remove('food', 'death');
+        }
+        if(bestScore){
+            bestScore.innerText = sessionBest;
         }
     }
 
@@ -290,6 +379,7 @@ window.onload = function(){
         if(!nome){
             nome = 'Anônimo';
         }
+        recordScore(nome, pontuacao, currentLevelId);
         historico.push({nome: nome, score: pontuacao});
         if(historico.length >5){
             historico.shift();
@@ -370,7 +460,7 @@ window.onload = function(){
     }
 
     function updateProgression(){
-        var targetLevel = Math.min(Math.floor(pontuacao / 50), 5);
+        var targetLevel = Math.min(Math.floor(pontuacao / 35), 5);
         if(targetLevel !== expansionLevel){
             expansionLevel = targetLevel;
             qtdpeca = baseGrid + expansionLevel * 2;
@@ -497,15 +587,18 @@ window.onload = function(){
             alvoy = Math.floor(Math.random()*qtdpeca);
             comidasColetadas++;
             remainingTime = initialTime + Math.floor(comidasColetadas / 7);
-            triggerFeedback('food', 'Boa! Estrela capturada.');
+            triggerFeedback('food', 'Boa! Comida capturada.');
             updateProgression();
         }
 
          //Atualiza informações da pontuação
 
-        pontos.innerHTML = (`${pontuacao}   <i class="far fa-star"></i>`);
-        if(pontuacao > Number(bestScore.innerText)){
-            bestScore.innerText = pontuacao;
+        pontos.innerHTML = (`${pontuacao}   <i class="fas fa-apple-alt"></i>`);
+        if(pontuacao > sessionBest){
+            sessionBest = pontuacao;
+            if(bestScore){
+                bestScore.innerText = sessionBest;
+            }
         }
         if(timerElement){
             timerElement.innerText = `${remainingTime.toFixed(1)}s`;
