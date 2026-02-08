@@ -3,6 +3,9 @@ window.onload = function(){
     var ctx = palco.getContext('2d');
 
     document.addEventListener('keydown', teclou);
+    palco.addEventListener('touchstart', handleTouchStart, { passive: false });
+    palco.addEventListener('touchmove', handleTouchMove, { passive: false });
+    palco.addEventListener('touchend', handleTouchEnd);
 
     var tickInterval = 62.5;
     setInterval(game, tickInterval);
@@ -124,6 +127,10 @@ window.onload = function(){
     var supabaseUrl = 'https://skcjwdbbgcshzynvhtte.supabase.co';
     var supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNrY2p3ZGJiZ2NzaHp5bnZodHRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1MDk5OTcsImV4cCI6MjA4NjA4NTk5N30.xLU2ehpjxocX61XlL6V1D-MO_4JcfPdnlbH0dxDoY00';
     var supabaseClient = null;
+    var touchStartX = 0;
+    var touchStartY = 0;
+    var hasTouchMove = false;
+    var swipeThreshold = 20;
 
     function applyLevel(levelId){
         var selected = levels.find(function(level){
@@ -303,6 +310,57 @@ window.onload = function(){
             }
         }
         return audioContext;
+    }
+
+    function handleTouchStart(event){
+        if(event.touches.length !== 1){
+            return;
+        }
+        unlockAudio();
+        var touch = event.touches[0];
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+        hasTouchMove = false;
+        swipeThreshold = Math.max(palco.clientWidth, palco.clientHeight) * 0.1;
+    }
+
+    function handleTouchMove(event){
+        if(event.touches.length !== 1){
+            return;
+        }
+        event.preventDefault();
+        var touch = event.touches[0];
+        var deltaX = touch.clientX - touchStartX;
+        var deltaY = touch.clientY - touchStartY;
+        var absX = Math.abs(deltaX);
+        var absY = Math.abs(deltaY);
+        if(Math.max(absX, absY) < swipeThreshold){
+            return;
+        }
+        hasTouchMove = true;
+        if(absX > absY){
+            if(deltaX > 0 && velx >= 0){
+                velx = vel;
+                vely = 0;
+            } else if(deltaX < 0 && velx <= 0){
+                velx = -vel;
+                vely = 0;
+            }
+        } else {
+            if(deltaY > 0 && vely >= 0){
+                velx = 0;
+                vely = vel;
+            } else if(deltaY < 0 && vely <= 0){
+                velx = 0;
+                vely = -vel;
+            }
+        }
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+    }
+
+    function handleTouchEnd(){
+        hasTouchMove = false;
     }
 
     function unlockAudio(){
