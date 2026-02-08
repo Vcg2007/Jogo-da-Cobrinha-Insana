@@ -22,7 +22,8 @@ window.onload = function(){
     var bestScore = document.getElementById('best-score');
     var historico = [0,0,0,0,0];
     var timerElement = document.getElementById('timer');
-    var initialTime = 15;
+    var feedbackElement = document.getElementById('feedback');
+    var initialTime = 20;
     var remainingTime = initialTime;
     var lastTickTime = Date.now();
     var isRunning = false;
@@ -114,6 +115,8 @@ window.onload = function(){
             ]
         }
     ];
+    var audioContext = null;
+    var audioUnlocked = false;
 
     function applyLevel(levelId){
         var selected = levels.find(function(level){
@@ -137,6 +140,65 @@ window.onload = function(){
         resetGame();
     }
 
+    function getAudioContext(){
+        if(!audioContext){
+            var AudioContext = window.AudioContext || window.webkitAudioContext;
+            if(AudioContext){
+                audioContext = new AudioContext();
+            }
+        }
+        return audioContext;
+    }
+
+    function unlockAudio(){
+        if(audioUnlocked){
+            return;
+        }
+        var context = getAudioContext();
+        if(context && context.state === 'suspended'){
+            context.resume();
+        }
+        audioUnlocked = true;
+    }
+
+    function playTone(frequency, duration, type, volume){
+        var context = getAudioContext();
+        if(!context){
+            return;
+        }
+        var oscillator = context.createOscillator();
+        var gainNode = context.createGain();
+        oscillator.type = type || 'sine';
+        oscillator.frequency.setValueAtTime(frequency, context.currentTime);
+        gainNode.gain.setValueAtTime(volume || 0.15, context.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, context.currentTime + duration);
+        oscillator.connect(gainNode);
+        gainNode.connect(context.destination);
+        oscillator.start();
+        oscillator.stop(context.currentTime + duration);
+    }
+
+    function triggerFeedback(kind, message){
+        if(feedbackElement){
+            feedbackElement.textContent = message;
+            feedbackElement.classList.remove('food', 'death');
+            feedbackElement.classList.add(kind);
+        }
+        if(palco){
+            palco.classList.remove('palco-hit', 'palco-death');
+            void palco.offsetWidth;
+            palco.classList.add(kind === 'food' ? 'palco-hit' : 'palco-death');
+            setTimeout(function(){
+                palco.classList.remove('palco-hit', 'palco-death');
+            }, 250);
+        }
+        if(kind === 'food'){
+            playTone(660, 0.18, 'triangle', 0.12);
+        } else if(kind === 'death'){
+            playTone(180, 0.4, 'sawtooth', 0.18);
+        }
+    }
+
     function resetGame(){
         rabo = 3;
         pontuacao = 0;
@@ -155,6 +217,10 @@ window.onload = function(){
         isRunning = false;
         comidasColetadas = 0;
         lastTickTime = Date.now();
+        if(feedbackElement){
+            feedbackElement.textContent = 'Pronto para a próxima estrela.';
+            feedbackElement.classList.remove('food', 'death');
+        }
     }
 
     function createSprite(size, drawFn){
@@ -218,6 +284,7 @@ window.onload = function(){
     }
 
     function registerGameOver(message){
+        triggerFeedback('death', 'Fim de jogo! Reiniciando a caçada...');
         window.alert(message);
         var nome = window.prompt('Digite seu nome para registrar a pontuação:', 'Jogador');
         if(!nome){
@@ -348,54 +415,6 @@ window.onload = function(){
             }
         }
 
-        if((velx !== 0 || vely !== 0) && !isRunning){
-            isRunning = true;
-        }
-
-        if(isRunning){
-            remainingTime -= delta;
-            if(remainingTime <= 0){
-                registerGameOver('Perdeu! O tempo acabou.');
-                return;
-            }
-        }
-
-        if((velx !== 0 || vely !== 0) && !isRunning){
-            isRunning = true;
-        }
-
-        if(isRunning){
-            remainingTime -= delta;
-            if(remainingTime <= 0){
-                registerGameOver('Perdeu! O tempo acabou.');
-                return;
-            }
-        }
-
-        if((velx !== 0 || vely !== 0) && !isRunning){
-            isRunning = true;
-        }
-
-        if(isRunning){
-            remainingTime -= delta;
-            if(remainingTime <= 0){
-                registerGameOver('Perdeu! O tempo acabou.');
-                return;
-            }
-        }
-
-        if((velx !== 0 || vely !== 0) && !isRunning){
-            isRunning = true;
-        }
-
-        if(isRunning){
-            remainingTime -= delta;
-            if(remainingTime <= 0){
-                registerGameOver('Perdeu! O tempo acabou.');
-                return;
-            }
-        }
-
         if(pontox <0){
             pontox = qtdpeca-1;
         }
@@ -478,6 +497,7 @@ window.onload = function(){
             alvoy = Math.floor(Math.random()*qtdpeca);
             comidasColetadas++;
             remainingTime = initialTime + Math.floor(comidasColetadas / 7);
+            triggerFeedback('food', 'Boa! Estrela capturada.');
             updateProgression();
         }
 
@@ -514,8 +534,10 @@ window.onload = function(){
     }
 
     function teclou(event){
+        unlockAudio();
         switch (event.keyCode){
             case 37: //left
+            case 65: //A
                 event.preventDefault();
                 if (velx >0){break;}
                 velx = -vel; 
@@ -523,6 +545,7 @@ window.onload = function(){
             break;
             
             case 38: //up
+            case 87: //W
                 event.preventDefault();
                 if (vely >0){break;}
                 velx = 0; 
@@ -530,6 +553,7 @@ window.onload = function(){
             break;
 
             case 39://right
+            case 68: //D
                 event.preventDefault();
                 if(velx <0){break;} 
                 velx = +vel; 
@@ -537,6 +561,7 @@ window.onload = function(){
             break;
 
             case 40://down
+            case 83: //S
                 event.preventDefault();
                 if(vely<0){break;}
                 velx = 0; 

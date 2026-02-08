@@ -4,33 +4,34 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Snake</title>
+    <title>Cobrinha Insana</title>
     <script defer src="game.js"></script>
     <link rel="stylesheet" href="estilo.css">
 </head>
 <body>
     <header>
-        <h1>Insane Snake by Victor  <i class="fas fa-dragon"></i></h1>
+        <h1>Cobrinha Insana: Caça às Estrelas <i class="fas fa-dragon"></i></h1>
     </header>
     <main>
         <canvas id="palco" width="400" height="400"></canvas>
         <div class="jogo">
             <section class="card pontuacao-atual">
                 <div class="card-header">
-                    <h2>Pontuação</h2>
+                    <h2>Placar da Caçada</h2>
                     <span class="badge">Ao vivo</span>
                 </div>
                 <p id="score">0</p>
                 <div class="score-meta">
                     <p>Recorde: <strong id="best-score">0</strong></p>
-                    <p>Tempo restante: <strong id="timer">15.0s</strong></p>
-                    <p class="score-hint">Colete estrelas e evite o obstáculo.</p>
+                    <p>Tempo para capturar comida: <strong id="timer" class="timer-value">20.0s</strong></p>
+                    <p class="score-hint">Colete estrelas antes do relógio zerar.</p>
+                    <p id="feedback" class="feedback">Pronto para a próxima estrela.</p>
                 </div>
             </section>
 
             <section class="card nivel-config">
-                <h3>Seleção de Nível</h3>
-                <p class="nivel-hint">Escolha a dificuldade antes de começar a jogar.</p>
+                <h3>Ritmo da Caçada</h3>
+                <p class="nivel-hint">Defina a intensidade antes de começar a jogar.</p>
                 <label class="nivel-label" for="nivel-select">Nível do jogo</label>
                 <select id="nivel-select">
                     <option value="1">Nível 1 - Treino</option>
@@ -46,7 +47,7 @@
             </section>
 
             <section class="card historicos">
-                <h3>Últimas Pontuações</h3>
+                <h3>Últimas Caçadas</h3>
                 <p class="historico">Sem Pontuação</p>
                 <p class="historico">Sem Pontuação</p>
                 <p class="historico">Sem Pontuação</p>
@@ -55,11 +56,11 @@
             </section>
 
             <section class="card info-jogo">
-                <h3>Informações</h3>
+                <h3>Como jogar</h3>
                 <ul>
-                    <li>Setas do teclado controlam a cobrinha.</li>
+                    <li>Use as setas ou WASD para controlar a cobrinha.</li>
+                    <li>Comida some se o tempo zerar.</li>
                     <li>Cobras rivais surgem conforme sua pontuação.</li>
-                    <li>Elas se movem com estilos diferentes em cada nível.</li>
                 </ul>
             </section>
         </div>

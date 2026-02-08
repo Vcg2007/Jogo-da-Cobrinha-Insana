@@ -41,6 +41,17 @@ h2, h3{
     border-radius: 12px;
     background-color: rgba(0, 0, 0, 0.8);
     box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.palco-hit{
+    border-color: rgba(0, 255, 120, 0.9);
+    box-shadow: 0 0 18px rgba(0, 255, 120, 0.8), 0 16px 28px rgba(0, 0, 0, 0.5);
+}
+
+.palco-death{
+    border-color: rgba(255, 70, 70, 0.9);
+    box-shadow: 0 0 22px rgba(255, 70, 70, 0.85), 0 16px 28px rgba(0, 0, 0, 0.5);
 }
 
 .card{
@@ -127,6 +138,26 @@ p#score{
     gap: 6px;
     font-size: 14px;
     color: rgba(255, 255, 255, 0.8);
+}
+
+.timer-value{
+    font-size: 22px;
+    color: rgb(0, 255, 140);
+    letter-spacing: 1px;
+}
+
+.feedback{
+    margin-top: 6px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.feedback.food{
+    color: rgb(0, 255, 120);
+}
+
+.feedback.death{
+    color: rgb(255, 100, 100);
 }
 
 .score-hint{
