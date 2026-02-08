@@ -3,6 +3,9 @@ window.onload = function(){
     var ctx = palco.getContext('2d');
 
     document.addEventListener('keydown', teclou);
+    palco.addEventListener('touchstart', handleTouchStart, { passive: false });
+    palco.addEventListener('touchmove', handleTouchMove, { passive: false });
+    palco.addEventListener('touchend', handleTouchEnd);
 
     var tickInterval = 62.5;
     setInterval(game, tickInterval);
@@ -22,7 +25,8 @@ window.onload = function(){
     var bestScore = document.getElementById('best-score');
     var historico = [0,0,0,0,0];
     var timerElement = document.getElementById('timer');
-    var initialTime = 15;
+    var feedbackElement = document.getElementById('feedback');
+    var initialTime = 20;
     var remainingTime = initialTime;
     var lastTickTime = Date.now();
     var isRunning = false;
@@ -52,6 +56,7 @@ window.onload = function(){
     var foodScale = 1;
     var levelSelect = document.getElementById('nivel-select');
     var levelDetails = document.getElementById('nivel-detalhes');
+    var leaderboardList = document.getElementById('leaderboard-list');
     var levels = [
         {
             id: 1,
@@ -114,11 +119,24 @@ window.onload = function(){
             ]
         }
     ];
+    var audioContext = null;
+    var audioUnlocked = false;
+    var currentLevelId = 1;
+    var sessionBest = 0;
+    var leaderboard = loadLeaderboard();
+    var supabaseUrl = 'https://skcjwdbbgcshzynvhtte.supabase.co';
+    var supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNrY2p3ZGJiZ2NzaHp5bnZodHRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1MDk5OTcsImV4cCI6MjA4NjA4NTk5N30.xLU2ehpjxocX61XlL6V1D-MO_4JcfPdnlbH0dxDoY00';
+    var supabaseClient = null;
+    var touchStartX = 0;
+    var touchStartY = 0;
+    var hasTouchMove = false;
+    var swipeThreshold = 20;
 
     function applyLevel(levelId){
         var selected = levels.find(function(level){
             return level.id === levelId;
         }) || levels[0];
+        currentLevelId = selected.id;
         foodScale = selected.foodScale;
         obstacleSpeedFactor = selected.rivalSpeed * 0.8;
         obstacleBias = selected.bias;
@@ -135,6 +153,263 @@ window.onload = function(){
             });
         }
         resetGame();
+        renderLeaderboard();
+    }
+
+    function loadLeaderboard(){
+        var stored = window.localStorage.getItem('snakeLeaderboard');
+        if(stored){
+            try{
+                return JSON.parse(stored);
+            } catch (e){
+                return createEmptyLeaderboard();
+            }
+        }
+        return createEmptyLeaderboard();
+    }
+
+    function getSupabaseClient(){
+        if(supabaseClient){
+            return supabaseClient;
+        }
+        if(window.supabase && window.supabase.createClient){
+            supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+            return supabaseClient;
+        }
+        return null;
+    }
+
+    function createEmptyLeaderboard(){
+        return {
+            levels: {
+                1: [],
+                2: [],
+                3: [],
+                4: [],
+                5: []
+            }
+        };
+    }
+
+    function saveLeaderboard(){
+        window.localStorage.setItem('snakeLeaderboard', JSON.stringify(leaderboard));
+    }
+
+    function recordScore(name, score, levelId){
+        if(score > sessionBest){
+            sessionBest = score;
+            if(bestScore){
+                bestScore.innerText = sessionBest;
+            }
+        }
+        var entry = {
+            nome: name,
+            score: score,
+            level: levelId,
+            timestamp: Date.now()
+        };
+        var bucket = leaderboard.levels[levelId] || [];
+        bucket.push(entry);
+        bucket.sort(function(a, b){
+            return b.score - a.score;
+        });
+        leaderboard.levels[levelId] = bucket.slice(0, 10);
+        saveLeaderboard();
+
+        var client = getSupabaseClient();
+        if(client){
+            client
+                .from('snake_scores')
+                .insert([{ player_name: name, score: score, level: levelId }])
+                .then(function(){
+                    renderLeaderboard();
+                })
+                .catch(function(){
+                    renderLeaderboard();
+                });
+        } else {
+            renderLeaderboard();
+        }
+    }
+
+    function renderLeaderboard(){
+        if(!leaderboardList){
+            return;
+        }
+        leaderboardList.innerHTML = '';
+        var loadingItem = document.createElement('li');
+        loadingItem.className = 'leaderboard-item';
+        loadingItem.textContent = 'Carregando leaderboard...';
+        leaderboardList.appendChild(loadingItem);
+
+        var client = getSupabaseClient();
+        if(!client){
+            renderLeaderboardFallback();
+            return;
+        }
+
+        client
+            .from('snake_scores')
+            .select('player_name, score, level')
+            .eq('level', currentLevelId)
+            .order('score', { ascending: false })
+            .limit(10)
+            .then(function(result){
+                if(result.error){
+                    renderLeaderboardFallback();
+                    return;
+                }
+                renderLeaderboardEntries(result.data || []);
+            })
+            .catch(function(){
+                renderLeaderboardFallback();
+            });
+    }
+
+    function renderLeaderboardFallback(){
+        var bucket = leaderboard.levels[currentLevelId] || [];
+        renderLeaderboardEntries(bucket.map(function(entry){
+            return {
+                player_name: entry.nome,
+                score: entry.score,
+                level: currentLevelId
+            };
+        }));
+    }
+
+    function renderLeaderboardEntries(entries){
+        leaderboardList.innerHTML = '';
+        if(entries.length === 0){
+            var emptyItem = document.createElement('li');
+            emptyItem.className = 'leaderboard-item';
+            emptyItem.textContent = 'Nenhuma pontuação registrada ainda.';
+            leaderboardList.appendChild(emptyItem);
+            return;
+        }
+        entries.forEach(function(entry, index){
+            var item = document.createElement('li');
+            item.className = 'leaderboard-item';
+            var rank = document.createElement('span');
+            rank.textContent = `#${index + 1}`;
+            var name = document.createElement('span');
+            name.textContent = entry.player_name || 'Jogador';
+            var score = document.createElement('span');
+            score.innerHTML = `${entry.score} <i class="fas fa-apple-alt"></i>`;
+            item.appendChild(rank);
+            item.appendChild(name);
+            item.appendChild(score);
+            leaderboardList.appendChild(item);
+        });
+    }
+
+    function getAudioContext(){
+        if(!audioContext){
+            var AudioContext = window.AudioContext || window.webkitAudioContext;
+            if(AudioContext){
+                audioContext = new AudioContext();
+            }
+        }
+        return audioContext;
+    }
+
+    function handleTouchStart(event){
+        if(event.touches.length !== 1){
+            return;
+        }
+        unlockAudio();
+        var touch = event.touches[0];
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+        hasTouchMove = false;
+        swipeThreshold = Math.max(palco.clientWidth, palco.clientHeight) * 0.1;
+    }
+
+    function handleTouchMove(event){
+        if(event.touches.length !== 1){
+            return;
+        }
+        event.preventDefault();
+        var touch = event.touches[0];
+        var deltaX = touch.clientX - touchStartX;
+        var deltaY = touch.clientY - touchStartY;
+        var absX = Math.abs(deltaX);
+        var absY = Math.abs(deltaY);
+        if(Math.max(absX, absY) < swipeThreshold){
+            return;
+        }
+        hasTouchMove = true;
+        if(absX > absY){
+            if(deltaX > 0 && velx >= 0){
+                velx = vel;
+                vely = 0;
+            } else if(deltaX < 0 && velx <= 0){
+                velx = -vel;
+                vely = 0;
+            }
+        } else {
+            if(deltaY > 0 && vely >= 0){
+                velx = 0;
+                vely = vel;
+            } else if(deltaY < 0 && vely <= 0){
+                velx = 0;
+                vely = -vel;
+            }
+        }
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+    }
+
+    function handleTouchEnd(){
+        hasTouchMove = false;
+    }
+
+    function unlockAudio(){
+        if(audioUnlocked){
+            return;
+        }
+        var context = getAudioContext();
+        if(context && context.state === 'suspended'){
+            context.resume();
+        }
+        audioUnlocked = true;
+    }
+
+    function playTone(frequency, duration, type, volume){
+        var context = getAudioContext();
+        if(!context){
+            return;
+        }
+        var oscillator = context.createOscillator();
+        var gainNode = context.createGain();
+        oscillator.type = type || 'sine';
+        oscillator.frequency.setValueAtTime(frequency, context.currentTime);
+        gainNode.gain.setValueAtTime(volume || 0.15, context.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, context.currentTime + duration);
+        oscillator.connect(gainNode);
+        gainNode.connect(context.destination);
+        oscillator.start();
+        oscillator.stop(context.currentTime + duration);
+    }
+
+    function triggerFeedback(kind, message){
+        if(feedbackElement){
+            feedbackElement.textContent = message;
+            feedbackElement.classList.remove('food', 'death');
+            feedbackElement.classList.add(kind);
+        }
+        if(palco){
+            palco.classList.remove('palco-hit', 'palco-death');
+            void palco.offsetWidth;
+            palco.classList.add(kind === 'food' ? 'palco-hit' : 'palco-death');
+            setTimeout(function(){
+                palco.classList.remove('palco-hit', 'palco-death');
+            }, 250);
+        }
+        if(kind === 'food'){
+            playTone(660, 0.18, 'triangle', 0.12);
+        } else if(kind === 'death'){
+            playTone(180, 0.4, 'sawtooth', 0.18);
+        }
     }
 
     function resetGame(){
@@ -155,6 +430,13 @@ window.onload = function(){
         isRunning = false;
         comidasColetadas = 0;
         lastTickTime = Date.now();
+        if(feedbackElement){
+            feedbackElement.textContent = 'Pronto para a próxima comida.';
+            feedbackElement.classList.remove('food', 'death');
+        }
+        if(bestScore){
+            bestScore.innerText = sessionBest;
+        }
     }
 
     function createSprite(size, drawFn){
@@ -218,11 +500,13 @@ window.onload = function(){
     }
 
     function registerGameOver(message){
+        triggerFeedback('death', 'Fim de jogo! Reiniciando a caçada...');
         window.alert(message);
         var nome = window.prompt('Digite seu nome para registrar a pontuação:', 'Jogador');
         if(!nome){
             nome = 'Anônimo';
         }
+        recordScore(nome, pontuacao, currentLevelId);
         historico.push({nome: nome, score: pontuacao});
         if(historico.length >5){
             historico.shift();
@@ -303,7 +587,7 @@ window.onload = function(){
     }
 
     function updateProgression(){
-        var targetLevel = Math.min(Math.floor(pontuacao / 50), 5);
+        var targetLevel = Math.min(Math.floor(pontuacao / 35), 5);
         if(targetLevel !== expansionLevel){
             expansionLevel = targetLevel;
             qtdpeca = baseGrid + expansionLevel * 2;
@@ -335,54 +619,6 @@ window.onload = function(){
 
         pontox += velx;
         pontoy += vely;
-
-        if((velx !== 0 || vely !== 0) && !isRunning){
-            isRunning = true;
-        }
-
-        if(isRunning){
-            remainingTime -= delta;
-            if(remainingTime <= 0){
-                registerGameOver('Perdeu! O tempo acabou.');
-                return;
-            }
-        }
-
-        if((velx !== 0 || vely !== 0) && !isRunning){
-            isRunning = true;
-        }
-
-        if(isRunning){
-            remainingTime -= delta;
-            if(remainingTime <= 0){
-                registerGameOver('Perdeu! O tempo acabou.');
-                return;
-            }
-        }
-
-        if((velx !== 0 || vely !== 0) && !isRunning){
-            isRunning = true;
-        }
-
-        if(isRunning){
-            remainingTime -= delta;
-            if(remainingTime <= 0){
-                registerGameOver('Perdeu! O tempo acabou.');
-                return;
-            }
-        }
-
-        if((velx !== 0 || vely !== 0) && !isRunning){
-            isRunning = true;
-        }
-
-        if(isRunning){
-            remainingTime -= delta;
-            if(remainingTime <= 0){
-                registerGameOver('Perdeu! O tempo acabou.');
-                return;
-            }
-        }
 
         if((velx !== 0 || vely !== 0) && !isRunning){
             isRunning = true;
@@ -478,14 +714,18 @@ window.onload = function(){
             alvoy = Math.floor(Math.random()*qtdpeca);
             comidasColetadas++;
             remainingTime = initialTime + Math.floor(comidasColetadas / 7);
+            triggerFeedback('food', 'Boa! Comida capturada.');
             updateProgression();
         }
 
          //Atualiza informações da pontuação
 
-        pontos.innerHTML = (`${pontuacao}   <i class="far fa-star"></i>`);
-        if(pontuacao > Number(bestScore.innerText)){
-            bestScore.innerText = pontuacao;
+        pontos.innerHTML = (`${pontuacao}   <i class="fas fa-apple-alt"></i>`);
+        if(pontuacao > sessionBest){
+            sessionBest = pontuacao;
+            if(bestScore){
+                bestScore.innerText = sessionBest;
+            }
         }
         if(timerElement){
             timerElement.innerText = `${remainingTime.toFixed(1)}s`;
@@ -514,8 +754,10 @@ window.onload = function(){
     }
 
     function teclou(event){
+        unlockAudio();
         switch (event.keyCode){
             case 37: //left
+            case 65: //A
                 event.preventDefault();
                 if (velx >0){break;}
                 velx = -vel; 
@@ -523,6 +765,7 @@ window.onload = function(){
             break;
             
             case 38: //up
+            case 87: //W
                 event.preventDefault();
                 if (vely >0){break;}
                 velx = 0; 
@@ -530,6 +773,7 @@ window.onload = function(){
             break;
 
             case 39://right
+            case 68: //D
                 event.preventDefault();
                 if(velx <0){break;} 
                 velx = +vel; 
@@ -537,6 +781,7 @@ window.onload = function(){
             break;
 
             case 40://down
+            case 83: //S
                 event.preventDefault();
                 if(vely<0){break;}
                 velx = 0; 
