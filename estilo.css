@@ -41,6 +41,17 @@ h2, h3{
     border-radius: 12px;
     background-color: rgba(0, 0, 0, 0.8);
     box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.palco-hit{
+    border-color: rgba(0, 255, 120, 0.9);
+    box-shadow: 0 0 18px rgba(0, 255, 120, 0.8), 0 16px 28px rgba(0, 0, 0, 0.5);
+}
+
+.palco-death{
+    border-color: rgba(255, 70, 70, 0.9);
+    box-shadow: 0 0 22px rgba(255, 70, 70, 0.85), 0 16px 28px rgba(0, 0, 0, 0.5);
 }
 
 .card{
@@ -129,9 +140,64 @@ p#score{
     color: rgba(255, 255, 255, 0.8);
 }
 
+.timer-value{
+    font-size: 22px;
+    color: rgb(0, 255, 140);
+    letter-spacing: 1px;
+}
+
+.feedback{
+    margin-top: 6px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.feedback.food{
+    color: rgb(0, 255, 120);
+}
+
+.feedback.death{
+    color: rgb(255, 100, 100);
+}
+
 .score-hint{
     font-size: 13px;
     color: rgba(255, 255, 255, 0.7);
+}
+
+.leaderboard{
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.leaderboard-hint{
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.leaderboard-list{
+    list-style: none;
+    display: grid;
+    gap: 6px;
+    padding-left: 0;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.leaderboard-item{
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+
+.leaderboard-item span{
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .historicos h3,
@@ -160,5 +226,28 @@ p#score{
     content: "✔";
     color: rgb(0, 255, 100);
     margin-right: 8px;
+}
+
+.adsense-area{
+    display: flex;
+    justify-content: center;
+    padding: 12px 16px 20px;
+}
+
+.adsense-box{
+    width: min(900px, 100%);
+    background: rgba(15, 14, 30, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 10px 14px;
+    text-align: center;
+}
+
+.adsense-label{
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 6px;
 }
 

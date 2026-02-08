@@ -4,33 +4,36 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Snake</title>
+    <meta name="google-adsense-account" content="ca-pub-9104103231484256">
+    <title>Cobrinha Insana</title>
     <script defer src="game.js"></script>
     <link rel="stylesheet" href="estilo.css">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9104103231484256" crossorigin="anonymous"></script>
 </head>
 <body>
     <header>
-        <h1>Insane Snake by Victor  <i class="fas fa-dragon"></i></h1>
+        <h1>Cobrinha Insana: Fome Sem Fim <i class="fas fa-dragon"></i></h1>
     </header>
     <main>
         <canvas id="palco" width="400" height="400"></canvas>
         <div class="jogo">
             <section class="card pontuacao-atual">
                 <div class="card-header">
-                    <h2>Pontuação</h2>
+                    <h2>Placar da Fome</h2>
                     <span class="badge">Ao vivo</span>
                 </div>
                 <p id="score">0</p>
                 <div class="score-meta">
                     <p>Recorde: <strong id="best-score">0</strong></p>
-                    <p>Tempo restante: <strong id="timer">15.0s</strong></p>
-                    <p class="score-hint">Colete estrelas e evite o obstáculo.</p>
+                    <p>Tempo para capturar comida: <strong id="timer" class="timer-value">20.0s</strong></p>
+                    <p class="score-hint">Coma a comida antes do relógio zerar.</p>
+                    <p id="feedback" class="feedback">Pronto para a próxima comida.</p>
                 </div>
             </section>
 
             <section class="card nivel-config">
-                <h3>Seleção de Nível</h3>
-                <p class="nivel-hint">Escolha a dificuldade antes de começar a jogar.</p>
+                <h3>Ritmo da Caçada</h3>
+                <p class="nivel-hint">Defina a intensidade antes de começar a jogar.</p>
                 <label class="nivel-label" for="nivel-select">Nível do jogo</label>
                 <select id="nivel-select">
                     <option value="1">Nível 1 - Treino</option>
@@ -45,8 +48,14 @@
                 </div>
             </section>
 
+            <section class="card leaderboard">
+                <h3>Leaderboard por nível</h3>
+                <p class="leaderboard-hint">Os maiores pontuadores de cada nível (top 10).</p>
+                <ol id="leaderboard-list" class="leaderboard-list"></ol>
+            </section>
+
             <section class="card historicos">
-                <h3>Últimas Pontuações</h3>
+                <h3>Últimas Caçadas</h3>
                 <p class="historico">Sem Pontuação</p>
                 <p class="historico">Sem Pontuação</p>
                 <p class="historico">Sem Pontuação</p>
@@ -55,16 +64,32 @@
             </section>
 
             <section class="card info-jogo">
-                <h3>Informações</h3>
+                <h3>Como jogar</h3>
                 <ul>
-                    <li>Setas do teclado controlam a cobrinha.</li>
+                    <li>Use as setas ou WASD para controlar a cobrinha.</li>
+                    <li>Comida some se o tempo zerar.</li>
                     <li>Cobras rivais surgem conforme sua pontuação.</li>
-                    <li>Elas se movem com estilos diferentes em cada nível.</li>
                 </ul>
             </section>
         </div>
     </main>
+
+    <footer class="adsense-area">
+        <div class="adsense-box">
+            <p class="adsense-label">Publicidade</p>
+            <!-- Substitua os atributos data-ad-client e data-ad-slot pelos seus valores do Google AdSense -->
+            <ins class="adsbygoogle"
+                 style="display:block; text-align:center;"
+                 data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+                 data-ad-slot="0000000000"
+                 data-ad-format="auto"
+                 data-full-width-responsive="true"></ins>
+        </div>
+    </footer>
     
     <script src="https://kit.fontawesome.com/29df9e7100.js" crossorigin="anonymous"></script>
+    <script>
+        (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
 </body>
 </html>
