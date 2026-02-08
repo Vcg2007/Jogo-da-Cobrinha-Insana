@@ -319,3 +319,49 @@ p#score{
     }
 }
 
+.adsense-area{
+    display: flex;
+    justify-content: center;
+    padding: 12px 16px 20px;
+}
+
+.adsense-box{
+    width: min(900px, 100%);
+    background: rgba(15, 14, 30, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 10px 14px;
+    text-align: center;
+}
+
+.adsense-label{
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 6px;
+}
+
+.adsense-area{
+    display: flex;
+    justify-content: center;
+    padding: 12px 16px 20px;
+}
+
+.adsense-box{
+    width: min(900px, 100%);
+    background: rgba(15, 14, 30, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 10px 14px;
+    text-align: center;
+}
+
+.adsense-label{
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 6px;
+}
+
