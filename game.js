@@ -121,6 +121,9 @@ window.onload = function(){
     var currentLevelId = 1;
     var sessionBest = 0;
     var leaderboard = loadLeaderboard();
+    var supabaseUrl = 'https://skcjwdbbgcshzynvhtte.supabase.co';
+    var supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNrY2p3ZGJiZ2NzaHp5bnZodHRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1MDk5OTcsImV4cCI6MjA4NjA4NTk5N30.xLU2ehpjxocX61XlL6V1D-MO_4JcfPdnlbH0dxDoY00';
+    var supabaseClient = null;
 
     function applyLevel(levelId){
         var selected = levels.find(function(level){
@@ -156,6 +159,17 @@ window.onload = function(){
             }
         }
         return createEmptyLeaderboard();
+    }
+
+    function getSupabaseClient(){
+        if(supabaseClient){
+            return supabaseClient;
+        }
+        if(window.supabase && window.supabase.createClient){
+            supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+            return supabaseClient;
+        }
+        return null;
     }
 
     function createEmptyLeaderboard(){
@@ -194,7 +208,21 @@ window.onload = function(){
         });
         leaderboard.levels[levelId] = bucket.slice(0, 10);
         saveLeaderboard();
-        renderLeaderboard();
+
+        var client = getSupabaseClient();
+        if(client){
+            client
+                .from('snake_scores')
+                .insert([{ player_name: name, score: score, level: levelId }])
+                .then(function(){
+                    renderLeaderboard();
+                })
+                .catch(function(){
+                    renderLeaderboard();
+                });
+        } else {
+            renderLeaderboard();
+        }
     }
 
     function renderLeaderboard(){
@@ -202,21 +230,62 @@ window.onload = function(){
             return;
         }
         leaderboardList.innerHTML = '';
+        var loadingItem = document.createElement('li');
+        loadingItem.className = 'leaderboard-item';
+        loadingItem.textContent = 'Carregando leaderboard...';
+        leaderboardList.appendChild(loadingItem);
+
+        var client = getSupabaseClient();
+        if(!client){
+            renderLeaderboardFallback();
+            return;
+        }
+
+        client
+            .from('snake_scores')
+            .select('player_name, score, level')
+            .eq('level', currentLevelId)
+            .order('score', { ascending: false })
+            .limit(10)
+            .then(function(result){
+                if(result.error){
+                    renderLeaderboardFallback();
+                    return;
+                }
+                renderLeaderboardEntries(result.data || []);
+            })
+            .catch(function(){
+                renderLeaderboardFallback();
+            });
+    }
+
+    function renderLeaderboardFallback(){
         var bucket = leaderboard.levels[currentLevelId] || [];
-        if(bucket.length === 0){
+        renderLeaderboardEntries(bucket.map(function(entry){
+            return {
+                player_name: entry.nome,
+                score: entry.score,
+                level: currentLevelId
+            };
+        }));
+    }
+
+    function renderLeaderboardEntries(entries){
+        leaderboardList.innerHTML = '';
+        if(entries.length === 0){
             var emptyItem = document.createElement('li');
             emptyItem.className = 'leaderboard-item';
             emptyItem.textContent = 'Nenhuma pontuação registrada ainda.';
             leaderboardList.appendChild(emptyItem);
             return;
         }
-        bucket.forEach(function(entry, index){
+        entries.forEach(function(entry, index){
             var item = document.createElement('li');
             item.className = 'leaderboard-item';
             var rank = document.createElement('span');
             rank.textContent = `#${index + 1}`;
             var name = document.createElement('span');
-            name.textContent = entry.nome;
+            name.textContent = entry.player_name || 'Jogador';
             var score = document.createElement('span');
             score.innerHTML = `${entry.score} <i class="fas fa-apple-alt"></i>`;
             item.appendChild(rank);
